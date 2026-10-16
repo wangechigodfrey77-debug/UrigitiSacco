@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getUserRole(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        ? get(/databases/$(database)/documents/users/$(uid)).data.role
+        : 'member';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        getUserRole(request.auth.uid) == 'admin' ||
+        request.auth.token.email == 'gmaurice101@gmail.com'
+      );
+    }
+
+    function isManager() {
+      return isSignedIn() && (
+        getUserRole(request.auth.uid) == 'manager' ||
+        isAdmin()
+      );
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(userId);
+      allow update: if isSignedIn() && (isAdmin() || request.auth.uid == userId);
+      allow delete: if isAdmin();
+    }
+
+    // Members collection
+    match /members/{memberId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        isManager() || 
+        isAdmin() || 
+        resource.data.email == request.auth.token.email ||
+        request.resource.data.email == request.auth.token.email ||
+        memberId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberId == memberId)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Shares Transactions
+    match /sharesTransactions/{txId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isManager() || isAdmin();
+    }
+
+    // Loans collection
+    match /loans/{loanId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        isManager() || 
+        isAdmin() || 
+        resource.data.memberId == request.auth.uid ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.memberId == resource.data.memberId)
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Loan Repayments / Deductions
+    match /deductions/{deductionId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isManager() || isAdmin();
+    }
+
+    // AGM Notices (allow public read for notices)
+    match /agmNotices/{noticeId} {
+      allow read: if true;
+      allow create, update, delete: if isManager() || isAdmin();
+    }
+
+    // Reports
+    match /reports/{reportId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isManager() || isAdmin();
+    }
+
+    // Audit Logs
+    match /auditLogs/{logId} {
+      allow read: if isManager() || isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // System Settings (allow public read for app configuration)
+    match /systemSettings/{settingId} {
+      allow read: if true;
+      allow create, update: if isAdmin();
+      allow delete: if false;
+    }
+  }
+}

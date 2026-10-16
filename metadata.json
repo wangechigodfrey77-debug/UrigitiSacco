@@ -1,0 +1,7 @@
+{
+  "name": "Urigiti Sacco Management System",
+  "description": "Complete Sacco management web application for PCEA Tumutumu Hospital employees supporting Members, Sacco Manager, and System Admin with secure auth, shares, loans, deductions, AGM notices, and reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
