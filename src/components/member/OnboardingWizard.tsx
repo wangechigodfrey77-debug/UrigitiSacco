@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserCheck, FileText, Upload, CheckCircle2, ShieldCheck, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
+import { UserCheck, FileText, Upload, CheckCircle2, ShieldCheck, ArrowRight, ArrowLeft, AlertCircle, X } from 'lucide-react';
 import { db } from '../../firebase/config';
 import { doc, setDoc } from 'firebase/firestore';
 import { Member } from '../../types';
@@ -7,9 +7,10 @@ import { Member } from '../../types';
 interface OnboardingWizardProps {
   member: Member;
   onComplete: () => void;
+  onCancel?: () => void;
 }
 
-export function OnboardingWizard({ member, onComplete }: OnboardingWizardProps) {
+export function OnboardingWizard({ member, onComplete, onCancel }: OnboardingWizardProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: member.fullName || '',
@@ -83,16 +84,28 @@ export function OnboardingWizard({ member, onComplete }: OnboardingWizardProps) 
 
   return (
     <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl space-y-6">
+      <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-semibold w-fit mb-1">
               <ShieldCheck className="w-3.5 h-3.5" /> PCEA Tumutumu Hospital Sacco Onboarding
             </div>
-            <h2 className="text-2xl font-extrabold text-slate-900">New Member Onboarding Wizard</h2>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">New Member Onboarding Wizard</h2>
           </div>
-          <span className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">Step {step} of 4</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold bg-slate-100 text-slate-600 px-3 py-1 rounded-full">Step {step} of 4</span>
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition"
+                title="Cancel and close onboarding"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Progress Bar */}
@@ -280,20 +293,31 @@ export function OnboardingWizard({ member, onComplete }: OnboardingWizardProps) 
 
           {/* Actions */}
           <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-            {step > 1 ? (
-              <button
-                type="button"
-                onClick={() => setStep(step - 1)}
-                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 flex items-center gap-1.5"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back
-              </button>
-            ) : <div />}
+            <div className="flex items-center gap-2">
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="px-4 py-2 border border-slate-200 text-slate-600 hover:text-slate-800 rounded-xl text-xs font-semibold hover:bg-slate-100 transition"
+                >
+                  Cancel
+                </button>
+              )}
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(step - 1)}
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-50 flex items-center gap-1.5 transition"
+                >
+                  <ArrowLeft className="w-4 h-4" /> Back
+                </button>
+              )}
+            </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 disabled:opacity-50"
+              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center gap-1.5 disabled:opacity-50 transition"
             >
               {submitting ? 'Submitting...' : step === 4 ? 'Complete Onboarding' : 'Continue'}
               {step < 4 && <ArrowRight className="w-4 h-4" />}

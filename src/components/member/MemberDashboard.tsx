@@ -189,7 +189,11 @@ export function MemberDashboard({ currentUser }: MemberDashboardProps) {
       </div>
 
       {showOnboarding && memberRecord && (
-        <OnboardingWizard member={memberRecord} onComplete={() => { setShowOnboarding(false); fetchMemberData(); }} />
+        <OnboardingWizard
+          member={memberRecord}
+          onComplete={() => { setShowOnboarding(false); fetchMemberData(); }}
+          onCancel={() => setShowOnboarding(false)}
+        />
       )}
 
       {/* Metric Cards */}
